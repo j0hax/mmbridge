@@ -1,6 +1,11 @@
 self:
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.services.mmbridge;
@@ -44,7 +49,12 @@ in
     };
 
     logLevel = lib.mkOption {
-      type = lib.types.enum [ "debug" "info" "warn" "error" ];
+      type = lib.types.enum [
+        "debug"
+        "info"
+        "warn"
+        "error"
+      ];
       default = "info";
       description = "Log level for the mmbridge daemon.";
     };
@@ -61,6 +71,13 @@ in
         type = lib.types.path;
         description = ''
           Path to a file containing the RCON password.
+        '';
+      };
+
+      rconPassword = lib.mkOption {
+        type = lib.types.string;
+        description = ''
+          The RCON password.
         '';
       };
 
@@ -171,34 +188,41 @@ in
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
 
-      serviceConfig = {
-        Type = "simple";
-        User = "minecraft";
-        Group = "minecraft";
-        Restart = "on-failure";
-        RestartSec = 10;
+      serviceConfig =
+        let
+          optionalCredential =
+            name: path:
+            lib.optionals (path != null) [
+              "${name}:${path}"
+            ];
+        in
+        {
+          Type = "simple";
+          User = "minecraft";
+          Group = "minecraft";
+          Restart = "on-failure";
+          RestartSec = 10;
 
-        ExecStart = "${lib.getExe cfg.package} -config ${configFile} -log-level ${cfg.logLevel}";
+          ExecStart = "${lib.getExe cfg.package} -config ${configFile} -log-level ${cfg.logLevel}";
 
-        LoadCredential = [
-          "rcon_password:${cfg.minecraft.rconPasswordFile}"
-          "as_token:${cfg.matrix.appserviceTokenFile}"
-          "hs_token:${cfg.matrix.homeserverTokenFile}"
-        ];
+          LoadCredential =
+            optionalCredential "rcon_password" cfg.minecraft.rconPasswordFile
+            ++ optionalCredential "as_token" cfg.matrix.appserviceTokenFile
+            ++ optionalCredential "hs_token" cfg.matrix.homeserverTokenFile;
 
-        # Hardening
-        NoNewPrivileges = true;
-        ProtectSystem = "strict";
-        ProtectHome = true;
-        PrivateTmp = true;
-        PrivateDevices = true;
-        ProtectKernelTunables = true;
-        ProtectKernelModules = true;
-        ProtectControlGroups = true;
-        RestrictSUIDSGID = true;
-        MemoryDenyWriteExecute = true;
-        LockPersonality = true;
-      };
+          # Hardening
+          NoNewPrivileges = true;
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          PrivateTmp = true;
+          PrivateDevices = true;
+          ProtectKernelTunables = true;
+          ProtectKernelModules = true;
+          ProtectControlGroups = true;
+          RestrictSUIDSGID = true;
+          MemoryDenyWriteExecute = true;
+          LockPersonality = true;
+        };
     };
   };
 }
