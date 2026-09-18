@@ -42,7 +42,7 @@ type Client struct {
 
 	mu   sync.Mutex
 	conn net.Conn
-	id   int32
+	id   atomic.Int32
 }
 
 // NewClient creates a new RCON client. Call Connect() to establish the connection.
@@ -157,7 +157,7 @@ func (c *Client) IsConnected() bool {
 }
 
 func (c *Client) nextID() int32 {
-	return atomic.AddInt32(&c.id, 1)
+	return c.id.Add(1)
 }
 
 func (c *Client) writePacket(id int32, ptype RconPacket, body string) error {
