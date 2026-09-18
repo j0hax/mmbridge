@@ -1,0 +1,52 @@
+# mmbridge configuration
+# Minecraft-Matrix Chat Bridge
+
+minecraft:
+  # RCON connection to your Minecraft server.
+  # Enable RCON in server.properties: enable-rcon=true, rcon.port=25575, rcon.password=<password>
+  rcon_address: "localhost:25575"
+  rcon_password: "your-rcon-password"
+
+  # Path to the Minecraft server's latest.log file.
+  # The bridge tails this file to detect chat messages, join/leave events, etc.
+  log_file: "/path/to/minecraft/server/logs/latest.log"
+
+matrix:
+  # Your Matrix homeserver's client-server API URL.
+  homeserver: "https://matrix.example.com"
+
+  # The server_name / domain of your homeserver.
+  domain: "example.com"
+
+  # Appservice identity. Must match the registration YAML given to the homeserver.
+  appservice_id: "minecraft"
+  as_token: "generate-a-random-secret-token-here"
+  hs_token: "generate-another-random-secret-token-here"
+
+  # Address the appservice HTTP server listens on (for homeserver -> bridge traffic).
+  listen_address: ":8009"
+
+  # The bridge bot's localpart. The full MXID will be @minecraft:example.com
+  bot_username: "minecraft"
+
+  # Prefix for ghost users representing Minecraft players.
+  # e.g. player "Steve" becomes @mc_steve:example.com
+  user_prefix: "mc_"
+
+  # The Matrix room to bridge. Use the internal room ID (starts with !).
+  # You can find this in Element: Room Settings -> Advanced -> Internal room ID.
+  room_id: "!your-room-id:example.com"
+
+bridge:
+  # Relay join/leave events from Minecraft to Matrix.
+  relay_join_leave: true
+
+  # Relay death messages.
+  relay_deaths: true
+
+  # Relay advancement notifications.
+  relay_advancements: true
+
+  # Command prefix for Matrix users to run bridge commands.
+  # e.g. "!mc list" to see online players.
+  command_prefix: "!mc"
