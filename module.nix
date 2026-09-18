@@ -184,14 +184,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    users.users.mmbridge = {
-      isSystemUser = true;
-      group = "mmbridge";
-      extraGroups = [ "minecraft" ];
-      description = "mmbridge service user";
-    };
-    users.groups.mmbridge = { };
-
     systemd.services.mmbridge = {
       description = "Minecraft-Matrix Chat Bridge";
       wantedBy = [ "multi-user.target" ];
@@ -208,8 +200,8 @@ in
         in
         {
           Type = "simple";
-          User = "mmbridge";
-          Group = "mmbridge";
+          User = "minecraft";
+          Group = "minecraft";
           Restart = "on-failure";
           RestartSec = 10;
 
