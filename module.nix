@@ -36,8 +36,11 @@ in
   options.services.mmbridge = {
     enable = lib.mkEnableOption "mmbridge Minecraft-Matrix chat bridge";
 
-    package = lib.mkPackageOption pkgs "mmbridge" {
+    package = lib.mkOption {
+      type = lib.types.package;
       default = self.packages.${pkgs.system}.mmbridge;
+      defaultText = lib.literalExpression "mmbridge.packages.\${system}.mmbridge";
+      description = "The mmbridge package to use.";
     };
 
     logLevel = lib.mkOption {
