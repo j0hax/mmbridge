@@ -83,7 +83,7 @@ in
       logFile = lib.mkOption {
         type = lib.types.str;
         description = "Path to the Minecraft server's latest.log file.";
-        example = "/var/lib/minecraft/logs/latest.log";
+        default = "/var/lib/minecraft/logs/latest.log";
       };
     };
 
