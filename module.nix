@@ -45,8 +45,8 @@ in
 
     package = lib.mkOption {
       type = lib.types.package;
-      default = self.packages.${pkgs.system}.mmbridge;
-      defaultText = lib.literalExpression "mmbridge.packages.\${system}.mmbridge";
+      default = self.packages.${pkgs.stdenv.hostPlatform.system}.mmbridge;
+      defaultText = lib.literalExpression "mmbridge.packages.\${pkgs.stdenv.hostPlatform.system}.mmbridge";
       description = "The mmbridge package to use.";
     };
 
@@ -70,8 +70,9 @@ in
       };
 
       rconAddress = lib.mkOption {
-        type = lib.types.str;
-        default = "localhost:25575";
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "localhost:25575";
         description = "RCON address of the Minecraft server (host:port).";
       };
 

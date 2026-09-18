@@ -58,13 +58,6 @@ Then configure the service:
 {
   services.mmbridge = {
     enable = true;
-
-    minecraft = {
-      rconAddress = "localhost:25575";
-      rconPasswordFile = "/run/secrets/mmbridge-rcon-password";
-      logFile = "/var/lib/minecraft/logs/latest.log";
-    };
-
     matrix = {
       homeserver = "https://matrix.example.com";
       domain = "example.com";
@@ -86,7 +79,7 @@ go build ./cmd/mmbridge/
 
 ## Manual setup
 
-1. **Enable RCON** on your Minecraft server in `server.properties`:
+1. **Enable RCON** on your Minecraft server in `server.properties` *or* configure a Pipe to `stdin` (default on NixOS)
 
    ```properties
    enable-rcon=true

@@ -2,6 +2,9 @@
 # Minecraft-Matrix Chat Bridge
 
 minecraft:
+  # For advanced users. This option can be faster and more secure, but depends on your platform.
+  fifo: "/run/minecraft-server.stdin"
+  
   # RCON connection to your Minecraft server.
   # Enable RCON in server.properties: enable-rcon=true, rcon.port=25575, rcon.password=<password>
   rcon_address: "localhost:25575"
