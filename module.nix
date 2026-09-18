@@ -173,8 +173,8 @@ in
 
       serviceConfig = {
         Type = "simple";
-        User = "mmbridge";
-        Group = "mmbridge";
+        User = "minecraft";
+        Group = "minecraft";
         Restart = "on-failure";
         RestartSec = 10;
 
