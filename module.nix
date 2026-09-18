@@ -17,6 +17,12 @@ let
       rcon_address = cfg.minecraft.rconAddress;
       log_file = cfg.minecraft.logFile;
     }
+    // lib.optionalAttrs (cfg.minecraft.fifo != null) {
+      fifo = cfg.minecraft.fifo;
+    }
+    // lib.optionalAttrs (cfg.minecraft.rconAddress != null) {
+      rcon_address = cfg.minecraft.rconAddress;
+    }
     // lib.optionalAttrs (cfg.minecraft.rconPasswordFile != null) {
       rcon_password_file = "/run/credentials/mmbridge.service/rcon_password";
     };
