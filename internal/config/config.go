@@ -23,6 +23,9 @@ type Config struct {
 
 // MinecraftConfig holds Minecraft server connection details.
 type MinecraftConfig struct {
+	// A pipe to stdin can be used in place of RCON (more performant and secure)
+	FIFO string `yaml:"fifo"`
+
 	// RCON address in host:port form (e.g. "localhost:25575").
 	RCONAddress  string `yaml:"rcon_address"`
 	RCONPassword string `yaml:"rcon_password"`
@@ -74,9 +77,6 @@ type BridgeConfig struct {
 
 	// Whether to relay advancements.
 	RelayAdvancements bool `yaml:"relay_advancements"`
-
-	// Command prefix for Matrix->MC commands (default: "!mc").
-	CommandPrefix string `yaml:"command_prefix"`
 }
 
 // Load reads and parses the configuration from the given YAML file path.
@@ -92,7 +92,6 @@ func Load(path string) (*Config, error) {
 			RelayJoinLeave:    true,
 			RelayDeaths:       true,
 			RelayAdvancements: true,
-			CommandPrefix:     "!mc",
 		},
 		Matrix: MatrixConfig{
 			ListenAddress: ":8009",
@@ -152,11 +151,11 @@ func readSecretFile(path string) (string, error) {
 }
 
 func (c *Config) validate() error {
-	if c.Minecraft.RCONAddress == "" {
-		return fmt.Errorf("config: minecraft.rcon_address is required")
+	if c.Minecraft.FIFO == "" && c.Minecraft.RCONAddress == "" {
+		return fmt.Errorf("config: minecraft.fifo or minecraft.rcon_address are required")
 	}
-	if c.Minecraft.RCONPassword == "" {
-		return fmt.Errorf("config: minecraft.rcon_password is required")
+	if c.Minecraft.RCONAddress != "" && c.Minecraft.RCONPassword == "" {
+		return fmt.Errorf("config: minecraft.rcon_password is required when using RCON")
 	}
 	if c.Minecraft.LogFile == "" {
 		return fmt.Errorf("config: minecraft.log_file is required")

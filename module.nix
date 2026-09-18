@@ -61,6 +61,12 @@ in
 
     # -- Minecraft ----------------------------------------------------------
     minecraft = {
+      fifo = lib.mkOption {
+        type = lib.types.path;
+        default = "/run/minecraft-server.stdin";
+        description = "Path to the Server's stdin for commands.";
+      };
+
       rconAddress = lib.mkOption {
         type = lib.types.str;
         default = "localhost:25575";
@@ -71,13 +77,6 @@ in
         type = lib.types.path;
         description = ''
           Path to a file containing the RCON password.
-        '';
-      };
-
-      rconPassword = lib.mkOption {
-        type = lib.types.string;
-        description = ''
-          The RCON password.
         '';
       };
 
