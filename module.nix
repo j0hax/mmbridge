@@ -15,8 +15,10 @@ let
   configFile = (pkgs.formats.yaml { }).generate "mmbridge.yaml" {
     minecraft = {
       rcon_address = cfg.minecraft.rconAddress;
-      rcon_password_file = "/run/credentials/mmbridge.service/rcon_password";
       log_file = cfg.minecraft.logFile;
+    }
+    // lib.optionalAttrs (cfg.minecraft.rconPasswordFile != null) {
+      rcon_password_file = "/run/credentials/mmbridge.service/rcon_password";
     };
     matrix = {
       homeserver = cfg.matrix.homeserver;
@@ -74,7 +76,8 @@ in
       };
 
       rconPasswordFile = lib.mkOption {
-        type = lib.types.path;
+        type = lib.types.nullOr lib.types.path;
+        default = null;
         description = ''
           Path to a file containing the RCON password.
         '';
