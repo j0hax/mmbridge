@@ -177,6 +177,7 @@ in
     users.users.mmbridge = {
       isSystemUser = true;
       group = "mmbridge";
+      extraGroups = [ "minecraft" ];
       description = "mmbridge service user";
     };
     users.groups.mmbridge = { };
@@ -197,8 +198,8 @@ in
         in
         {
           Type = "simple";
-          User = "minecraft";
-          Group = "minecraft";
+          User = "mmbridge";
+          Group = "mmbridge";
           Restart = "on-failure";
           RestartSec = 10;
 
