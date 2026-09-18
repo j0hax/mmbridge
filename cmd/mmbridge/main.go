@@ -17,7 +17,7 @@ import (
 	"regexp"
 	"syscall"
 
-	"gopkg.in/yaml.v3"
+	"github.com/goccy/go-yaml"
 
 	"github.com/johannes/mmbridge/internal/bridge"
 	"github.com/johannes/mmbridge/internal/config"
@@ -109,8 +109,8 @@ type registrationYAML struct {
 }
 
 type namespaces struct {
-	Users  []namespace `yaml:"users"`
-	Rooms  []namespace `yaml:"rooms,omitempty"`
+	Users   []namespace `yaml:"users"`
+	Rooms   []namespace `yaml:"rooms,omitempty"`
 	Aliases []namespace `yaml:"aliases,omitempty"`
 }
 

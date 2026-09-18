@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"gopkg.in/yaml.v3"
+	"github.com/goccy/go-yaml"
 )
 
 // Config is the top-level configuration for the Minecraft-Matrix bridge.
@@ -96,7 +96,7 @@ func Load(path string) (*Config, error) {
 		},
 		Matrix: MatrixConfig{
 			ListenAddress: ":8009",
-			BotUsername:    "minecraft",
+			BotUsername:   "minecraft",
 			UserPrefix:    "mc_",
 			AppserviceID:  "minecraft",
 		},
