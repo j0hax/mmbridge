@@ -14,16 +14,18 @@ import (
 	"time"
 )
 
+type RconPacket int32
+
 const (
 	// Packet types
-	typeAuth         int32 = 3
-	typeAuthResponse int32 = 2
-	typeCommand      int32 = 2
-	typeResponse     int32 = 0
+	Auth         RconPacket = 3
+	AuthResponse RconPacket = 2
+	Command      RconPacket = 2
+	Response     RconPacket = 0
 
 	// Limits
-	maxPacketSize = 4096 + 14 // 4096 payload + 14 header/padding
-	minPacketSize = 10        // minimum packet: 4 (id) + 4 (type) + 1 (body nul) + 1 (pad nul)
+	MaxPacketSize = 4096 + 14 // 4096 payload + 14 header/padding
+	MinPacketSize = 10        // minimum packet: 4 (id) + 4 (type) + 1 (body nul) + 1 (pad nul)
 )
 
 var (
@@ -73,7 +75,7 @@ func (c *Client) Connect() error {
 
 	// Authenticate
 	id := c.nextID()
-	if err := c.writePacket(id, typeAuth, c.password); err != nil {
+	if err := c.writePacket(id, Auth, c.password); err != nil {
 		c.conn.Close()
 		c.conn = nil
 		return fmt.Errorf("rcon: auth write: %w", err)
@@ -87,7 +89,7 @@ func (c *Client) Connect() error {
 	}
 
 	// Minecraft sends type=2 for auth response, with id=-1 on failure.
-	if respType == typeAuthResponse && respID == -1 {
+	if respType == AuthResponse && respID == -1 {
 		c.conn.Close()
 		c.conn = nil
 		return ErrAuthFailed
@@ -100,7 +102,7 @@ func (c *Client) Connect() error {
 			c.conn = nil
 			return fmt.Errorf("rcon: auth read (second): %w", err)
 		}
-		if respType == typeAuthResponse && respID == -1 {
+		if respType == AuthResponse && respID == -1 {
 			c.conn.Close()
 			c.conn = nil
 			return ErrAuthFailed
@@ -120,7 +122,7 @@ func (c *Client) Execute(command string) (string, error) {
 	}
 
 	id := c.nextID()
-	if err := c.writePacket(id, typeCommand, command); err != nil {
+	if err := c.writePacket(id, Command, command); err != nil {
 		return "", fmt.Errorf("rcon: command write: %w", err)
 	}
 
@@ -158,7 +160,7 @@ func (c *Client) nextID() int32 {
 	return atomic.AddInt32(&c.id, 1)
 }
 
-func (c *Client) writePacket(id, ptype int32, body string) error {
+func (c *Client) writePacket(id int32, ptype RconPacket, body string) error {
 	payload := []byte(body)
 	// Packet layout: [size:4][id:4][type:4][body:n][nul:1][nul:1]
 	size := int32(4 + 4 + len(payload) + 1 + 1) // id + type + body + 2 nul bytes
@@ -176,7 +178,7 @@ func (c *Client) writePacket(id, ptype int32, body string) error {
 	return err
 }
 
-func (c *Client) readPacket() (id, ptype int32, body string, err error) {
+func (c *Client) readPacket() (id int32, ptype RconPacket, body string, err error) {
 	c.conn.SetReadDeadline(time.Now().Add(c.timeout))
 
 	// Read the 4-byte size prefix
@@ -184,7 +186,7 @@ func (c *Client) readPacket() (id, ptype int32, body string, err error) {
 	if err = binary.Read(c.conn, binary.LittleEndian, &size); err != nil {
 		return 0, 0, "", fmt.Errorf("read size: %w", err)
 	}
-	if size < int32(minPacketSize) || size > int32(maxPacketSize) {
+	if size < int32(MinPacketSize) || size > int32(MaxPacketSize) {
 		return 0, 0, "", fmt.Errorf("invalid packet size %d", size)
 	}
 
