@@ -11,11 +11,13 @@ import (
 	"strings"
 	"sync"
 
+	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/appservice"
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 
 	"github.com/johannes/mmbridge/internal/config"
+	"github.com/johannes/mmbridge/internal/mojang"
 )
 
 // MessageHandler is called when a real Matrix user sends a message to the bridged room.
@@ -250,6 +252,27 @@ func (s *Service) getOrCreateGhost(ctx context.Context, player string) (*appserv
 
 	if err := intent.SetDisplayName(ctx, player); err != nil {
 		s.log.Warn("ghost set display name", "player", player, "error", err)
+	}
+
+	// Upload profile pictures, if possible
+	pdata, err := mojang.GetPlayer(player)
+	if err == nil {
+		face, err := pdata.GetFace()
+		if err == nil {
+			req := mautrix.ReqUploadMedia{
+				ContentBytes: face,
+				ContentType:  "image/png",
+			}
+			resp, err := intent.UploadMedia(ctx, req)
+			if err != nil {
+				s.log.Warn("Could not upload avatar", "player", player, "error", err)
+			}
+			intent.SetAvatarURL(ctx, resp.ContentURI)
+		} else {
+			s.log.Error("could not fetch skin data", "player", player, "error", err)
+		}
+	} else {
+		s.log.Error("could not fetch player information", "player", player, "error", err)
 	}
 
 	if err := intent.EnsureJoined(ctx, s.roomID); err != nil {
