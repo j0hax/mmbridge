@@ -157,7 +157,7 @@ func (p *Player) GetFace() ([]byte, error) {
 		return nil, err
 	}
 
-	face := skin.SubImage(image.Rect(8, 8, 15, 15)).(*image.RGBA)
+	face := skin.SubImage(image.Rect(8, 8, 16, 16)).(*image.RGBA)
 
 	var buf bytes.Buffer
 	if err := png.Encode(&buf, face); err != nil {
