@@ -262,25 +262,37 @@ func (s *Service) getOrCreateGhost(ctx context.Context, player string) (*appserv
 		s.log.Warn("ghost set display name", "player", player, "error", err)
 	}
 
-	// Upload profile pictures, if possible
-	pdata, err := mojang.GetPlayer(player)
-	if err == nil {
-		face, err := pdata.GetFacePNG(1024)
+	// Upload profile picture iff it does not exist.
+	// TODO: currently, pictures are not automatically updated if a skin changes.
+	// We should compare pictures and update them.
+	url, _ := intent.GetOwnAvatarURL(ctx)
+	if url.IsEmpty() {
+		pdata, err := mojang.GetPlayer(player)
 		if err == nil {
-			req := mautrix.ReqUploadMedia{
-				ContentBytes: face,
-				ContentType:  "image/png",
+			face, err := pdata.GetFacePNG(1024)
+			if err == nil {
+				req := mautrix.ReqUploadMedia{
+					ContentBytes: face,
+					ContentType:  "image/png",
+				}
+				resp, err := intent.UploadMedia(ctx, req)
+				if err != nil {
+					s.log.Warn("Could not upload avatar", "player", player, "error", err)
+				}
+
+				if err = intent.SetAvatarURL(ctx, resp.ContentURI); err != nil {
+					s.log.Info("set new avatar", "player", player, "url", resp.ContentURI.String())
+				} else {
+					s.log.Error("could not set avatar", "player", player, "err", err)
+				}
+			} else {
+				s.log.Error("could not fetch skin data", "player", player, "error", err)
 			}
-			resp, err := intent.UploadMedia(ctx, req)
-			if err != nil {
-				s.log.Warn("Could not upload avatar", "player", player, "error", err)
-			}
-			intent.SetAvatarURL(ctx, resp.ContentURI)
 		} else {
-			s.log.Error("could not fetch skin data", "player", player, "error", err)
+			s.log.Error("could not fetch player information", "player", player, "error", err)
 		}
 	} else {
-		s.log.Error("could not fetch player information", "player", player, "error", err)
+		s.log.Debug("not updating avatar, already have one", "player", player, "url", url.String())
 	}
 
 	if err := intent.EnsureJoined(ctx, s.roomID); err != nil {
