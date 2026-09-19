@@ -23,7 +23,7 @@
             pname = "mmbridge";
             version = "0.1.0";
             src = ./.;
-            vendorHash = "sha256-0lQ5YWgl0g5ES1Ox2hwWZryojQib5mLxY7PGaCzIMjQ=";
+            vendorHash = "sha256-G8Q/mRPpoyZs4Vm0ZUNEGKwr7S9RY9Tj2xhMf/SRcKc=";
             subPackages = [ "cmd/mmbridge" ];
             meta = {
               description = "Minecraft to Matrix chat bridge using RCON and the Matrix Application Service API";

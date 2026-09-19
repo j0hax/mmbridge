@@ -257,7 +257,7 @@ func (s *Service) getOrCreateGhost(ctx context.Context, player string) (*appserv
 	// Upload profile pictures, if possible
 	pdata, err := mojang.GetPlayer(player)
 	if err == nil {
-		face, err := pdata.GetFace()
+		face, err := pdata.GetFacePNG(1024)
 		if err == nil {
 			req := mautrix.ReqUploadMedia{
 				ContentBytes: face,

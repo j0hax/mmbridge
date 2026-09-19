@@ -6,8 +6,8 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
+	"golang.org/x/image/draw"
 	"image"
-	"image/draw"
 	"image/png"
 	"net/http"
 )
@@ -127,6 +127,7 @@ func (p *Player) GetCapeURL() string {
 	return p.Properties[0].Value.Textures.Cape.URL
 }
 
+// GetSkin returns the player's complete skin texture as an image
 func (p *Player) GetSkin() (*image.RGBA, error) {
 	resp, err := http.Get(p.GetSkinURL())
 	if err != nil {
@@ -150,8 +151,8 @@ func (p *Player) GetSkin() (*image.RGBA, error) {
 	return rgba, nil
 }
 
-// Returns the players Face as a PNG-Encoded byte array
-func (p *Player) GetFace() ([]byte, error) {
+// Returns just the player's face texture
+func (p *Player) GetFace() (*image.RGBA, error) {
 	skin, err := p.GetSkin()
 	if err != nil {
 		return nil, err
@@ -159,10 +160,34 @@ func (p *Player) GetFace() ([]byte, error) {
 
 	face := skin.SubImage(image.Rect(8, 8, 16, 16)).(*image.RGBA)
 
+	return face, nil
+}
+
+// Returns the player's face as a ready-to-use PNG-Encoded byte array
+func (p *Player) GetFacePNG(size int) ([]byte, error) {
+	face, err := p.GetFace()
+	if err != nil {
+		return nil, err
+	}
+
+	// scale the face to a usable size
+	dst := image.NewRGBA(image.Rect(0, 0, size, size))
+
+	draw.NearestNeighbor.Scale(
+		dst,
+		dst.Bounds(),
+		face,
+		face.Bounds(),
+		draw.Src,
+		nil,
+	)
+
 	var buf bytes.Buffer
-	if err := png.Encode(&buf, face); err != nil {
+
+	if err := png.Encode(&buf, dst); err != nil {
 		return nil, err
 	}
 
 	return buf.Bytes(), nil
+
 }
