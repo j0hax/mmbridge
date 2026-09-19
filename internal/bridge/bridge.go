@@ -215,27 +215,33 @@ func (b *Bridge) handleMinecraftEvent(
 		}
 
 	case logtail.EventJoin:
+		b.log.Debug("mc join", "player", ev.Player)
+
+		if err := b.matrix.SetOnline(ctx, ev.Player, true); err != nil {
+			b.log.Error("setting presence", "online", true, "player", ev.Player)
+		}
+
 		if !b.cfg.Bridge.RelayJoinLeave {
 			return
 		}
 
 		msg := fmt.Sprintf("%s joined the game", ev.Player)
-
-		b.log.Debug("mc join", "player", ev.Player)
-
 		if err := b.matrix.SendNotice(ctx, msg); err != nil {
 			b.log.Error("forward join to matrix", "error", err)
 		}
 
 	case logtail.EventLeave:
+		b.log.Debug("mc leave", "player", ev.Player)
+
+		if err := b.matrix.SetOnline(ctx, ev.Player, false); err != nil {
+			b.log.Error("setting presence", "online", false, "player", ev.Player)
+		}
+
 		if !b.cfg.Bridge.RelayJoinLeave {
 			return
 		}
 
 		msg := fmt.Sprintf("%s left the game", ev.Player)
-
-		b.log.Debug("mc leave", "player", ev.Player)
-
 		if err := b.matrix.SendNotice(ctx, msg); err != nil {
 			b.log.Error("forward leave to matrix", "error", err)
 		}

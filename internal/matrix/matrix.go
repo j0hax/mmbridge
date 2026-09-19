@@ -108,11 +108,19 @@ func (s *Service) Start(ctx context.Context) error {
 	if err := bot.EnsureJoined(ctx, s.roomID); err != nil {
 		s.log.Warn("bot join room (may already be joined)", "error", err)
 	}
+	if err := bot.SetPresence(ctx, mautrix.ReqPresence{Presence: event.PresenceOnline}); err != nil {
+		s.log.Warn("bot presence", "error", err)
+	}
 
 	go s.processor.Start(ctx)
 	go s.as.Start()
 
 	<-ctx.Done()
+
+	if err := bot.SetPresence(ctx, mautrix.ReqPresence{Presence: event.PresenceOffline}); err != nil {
+		s.log.Warn("bot presence", "error", err)
+	}
+
 	s.as.Stop()
 	s.processor.Stop()
 	return ctx.Err()
@@ -285,6 +293,26 @@ func (s *Service) getOrCreateGhost(ctx context.Context, player string) (*appserv
 
 	s.log.Info("provisioned ghost user", "player", player, "mxid", userID)
 	return intent, nil
+}
+
+// SetOnline sets a players status to online or offline.
+func (s *Service) SetOnline(ctx context.Context, player string, online bool) error {
+	intent, err := s.getOrCreateGhost(ctx, player)
+	if err != nil {
+		return fmt.Errorf("getting ghost: %w", err)
+	}
+
+	var p event.Presence
+	if online {
+		p = event.PresenceOnline
+	} else {
+		p = event.PresenceOffline
+	}
+	if err := intent.SetPresence(ctx, mautrix.ReqPresence{Presence: p}); err != nil {
+		return fmt.Errorf("setting presence: %w", err)
+	}
+
+	return nil
 }
 
 // parseListenAddress splits ":8009" or "0.0.0.0:8009" into host and port.
