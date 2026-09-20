@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -63,6 +64,8 @@ func New(cfg *config.Config, logger *slog.Logger) (*Bridge, error) {
 
 	return b, nil
 }
+
+var mcColorCode = regexp.MustCompile(`§.`)
 
 // Run starts the bridge and blocks until the context is cancelled.
 func (b *Bridge) Run(ctx context.Context) error {
@@ -202,6 +205,10 @@ func (b *Bridge) handleMinecraftEvent(
 	ctx context.Context,
 	ev *logtail.Event,
 ) {
+
+	// Strip Minecraft color codes
+	ev.Message = mcColorCode.ReplaceAllString(ev.Message, "")
+
 	switch ev.Type {
 	case logtail.EventChat:
 		b.log.Debug(
