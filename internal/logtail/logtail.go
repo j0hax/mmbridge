@@ -27,11 +27,11 @@ const (
 
 // Event represents a parsed Minecraft server log event.
 type Event struct {
-	Type       EventType
-	Player     string
-	Message    string // chat text, death message, advancement name, etc.
-	RawLine    string
-	Timestamp  string
+	Type      EventType
+	Player    string
+	Message   string // chat text, death message, advancement name, etc.
+	RawLine   string
+	Timestamp string
 }
 
 func (e EventType) String() string {
@@ -189,7 +189,7 @@ type Tailer struct {
 
 // NewTailer creates a log tailer for the given log file path.
 func NewTailer(logPath string, pollRate time.Duration) *Tailer {
-	if pollRate == 0 {
+	if pollRate <= 0 {
 		pollRate = 500 * time.Millisecond
 	}
 	return &Tailer{
@@ -198,13 +198,21 @@ func NewTailer(logPath string, pollRate time.Duration) *Tailer {
 	}
 }
 
-// Tail starts tailing the log file, sending parsed events to the returned channel.
-// It seeks to the end of the file on start (so it only sees new lines).
-// Blocks until the context is cancelled.
+// Tail starts a goroutine that tails the log file and sends parsed events
+// to the returned channel. It seeks to the end of the file on start, so
+// only new lines are processed. The goroutine exits when ctx is cancelled.
 func (t *Tailer) Tail(ctx context.Context) (<-chan *Event, error) {
 	f, err := os.Open(t.path)
 	if err != nil {
 		return nil, fmt.Errorf("logtail: open %s: %w", t.path, err)
+	}
+
+	// Remember the identity of the file we opened. This lets us detect
+	// rotation where the old file is renamed and a new file is created.
+	fileInfo, err := f.Stat()
+	if err != nil {
+		f.Close()
+		return nil, fmt.Errorf("logtail: stat %s: %w", t.path, err)
 	}
 
 	// Seek to end — we only care about new messages.
@@ -216,49 +224,78 @@ func (t *Tailer) Tail(ctx context.Context) (<-chan *Event, error) {
 	ch := make(chan *Event, 64)
 
 	go func() {
-		defer f.Close()
+		defer func() {
+			_ = f.Close()
+		}()
 		defer close(ch)
 
 		reader := bufio.NewReader(f)
 		ticker := time.NewTicker(t.pollRate)
 		defer ticker.Stop()
 
-		var partial string
-
 		for {
 			select {
 			case <-ctx.Done():
 				return
+
 			case <-ticker.C:
 				for {
+					select {
+					case <-ctx.Done():
+						return
+					default:
+					}
+
 					line, err := reader.ReadString('\n')
-					if len(line) > 0 {
-						partial += line
-						if strings.HasSuffix(partial, "\n") {
-							trimmed := strings.TrimRight(partial, "\r\n")
-							partial = ""
-							if ev := ParseLine(trimmed); ev != nil {
-								select {
-								case ch <- ev:
-								case <-ctx.Done():
-									return
-								}
+
+					if len(line) > 0 && strings.HasSuffix(line, "\n") {
+						line = strings.TrimRight(line, "\r\n")
+
+						if ev := ParseLine(line); ev != nil {
+							select {
+							case ch <- ev:
+							case <-ctx.Done():
+								return
 							}
 						}
 					}
+
 					if err != nil {
-						// Check if the file was rotated (truncated).
-						if err == io.EOF {
-							// Verify file wasn't truncated/rotated.
-							pos, _ := f.Seek(0, io.SeekCurrent)
-							info, serr := f.Stat()
-							if serr == nil && info.Size() < pos {
-								// File was truncated, seek to beginning.
-								f.Seek(0, io.SeekStart)
+						if err != io.EOF {
+							break
+						}
+
+						pathInfo, err := os.Stat(t.path)
+						if err != nil {
+							break
+						}
+
+						// Rename/create rotation.
+						if !os.SameFile(fileInfo, pathInfo) {
+							newFile, newInfo, err := reopenLog(t.path)
+							if err != nil {
+								break
+							}
+
+							oldFile := f
+
+							f = newFile
+							fileInfo = newInfo
+							reader = bufio.NewReader(f)
+
+							_ = oldFile.Close()
+
+							continue
+						}
+
+						// copytruncate rotation.
+						pos, err := f.Seek(0, io.SeekCurrent)
+						if err == nil && pathInfo.Size() < pos {
+							if _, err := f.Seek(0, io.SeekStart); err == nil {
 								reader.Reset(f)
-								partial = ""
 							}
 						}
+
 						break
 					}
 				}
@@ -267,4 +304,27 @@ func (t *Tailer) Tail(ctx context.Context) (<-chan *Event, error) {
 	}()
 
 	return ch, nil
+}
+
+// reopenLog reopens the file at t.path. For a newly-created file after log
+// rotation, start at the beginning so lines written before we
+// notice the rotation are not skipped.
+func reopenLog(path string) (*os.File, os.FileInfo, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	info, err := f.Stat()
+	if err != nil {
+		_ = f.Close()
+		return nil, nil, err
+	}
+
+	if _, err := f.Seek(0, io.SeekStart); err != nil {
+		_ = f.Close()
+		return nil, nil, err
+	}
+
+	return f, info, nil
 }
