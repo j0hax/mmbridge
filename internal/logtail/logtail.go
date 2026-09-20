@@ -97,6 +97,9 @@ var deathVerbs = []string{
 	"went up in flames", "walked into fire",
 	"discovered the floor was lava", "was frozen to death",
 	"was stung to death", "was burned to a crisp",
+	"to death", "died", "fell off", "was doomed to", "fell while",
+	"not just the floor is lava", "was smashed by", "was speared by",
+	"left the confines of this world", "was squished", "was squashed",
 }
 
 // ParseLine attempts to parse a single log line into an Event.
