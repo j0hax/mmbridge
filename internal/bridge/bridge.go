@@ -205,7 +205,7 @@ func (b *Bridge) handleMinecraftEvent(
 ) {
 
 	// Convert Minecraft message codes
-	ev.Message = formatting.MinecraftToMarkdown(ev.Message)
+	ev.Message = formatting.StripEscapes(ev.Message)
 
 	switch ev.Type {
 	case logtail.EventChat:

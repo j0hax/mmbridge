@@ -27,6 +27,11 @@ type style struct {
 // Generic way to filter Minecraft escapes
 var MCEscapeCode = regexp.MustCompile(`§.`)
 
+// StripEscapes removes any escape codes in Minecraft text.
+func StripEscapes(s string) string {
+	return MCEscapeCode.ReplaceAllString(s, "")
+}
+
 // MinecraftToMarkdown converts Minecraft legacy formatting codes
 // such as §l, §o, §n, §m and §r to Markdown.
 //
