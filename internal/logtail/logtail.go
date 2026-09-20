@@ -96,7 +96,7 @@ var deathVerbs = []string{
 	"experienced kinetic energy", "went off with a bang",
 	"went up in flames", "walked into fire",
 	"discovered the floor was lava", "was frozen to death",
-	"was stung to death",
+	"was stung to death", "was burned to a crisp",
 }
 
 // ParseLine attempts to parse a single log line into an Event.
