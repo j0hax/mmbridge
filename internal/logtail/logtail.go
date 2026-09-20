@@ -60,7 +60,7 @@ var (
 	// Matches the log prefix and captures the timestamp and message body.
 	// Optionally matches the "[Not Secure] " tag prepended to messages from
 	// players who connect without chat signing (Minecraft 1.19.1+).
-	reLogLine = regexp.MustCompile(`^\[(\d{2}:\d{2}:\d{2})\] \[Server thread/INFO\]:\s+(?:\[Not Secure\] )?(.+)$`)
+	reLogLine = regexp.MustCompile(`^\[(\d{2}:\d{2}:\d{2})\] \[Server thread/INFO\]:\s+(?:\[Not Secure\] )?(?:System chat: )?(.+)$`)
 
 	// Chat: <PlayerName> message text
 	reChat = regexp.MustCompile(`^<(\w+)>\s+(.+)$`)
