@@ -251,7 +251,9 @@ func (t *Tailer) Tail(ctx context.Context) (<-chan *Event, error) {
 
 					line, err := reader.ReadString('\n')
 
-					slog.Debug("read", "line", line)
+					if len(line) > 0 {
+						slog.Debug("read", "line", line)
+					}
 
 					if len(line) > 0 && strings.HasSuffix(line, "\n") {
 						line = strings.TrimRight(line, "\r\n")
