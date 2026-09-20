@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"regexp"
 	"strings"
@@ -223,6 +224,8 @@ func (t *Tailer) Tail(ctx context.Context) (<-chan *Event, error) {
 
 	ch := make(chan *Event, 64)
 
+	slog.Debug("starting tail goroutine", "file", f.Name())
+
 	go func() {
 		defer func() {
 			_ = f.Close()
@@ -272,6 +275,7 @@ func (t *Tailer) Tail(ctx context.Context) (<-chan *Event, error) {
 
 						// Rename/create rotation.
 						if !os.SameFile(fileInfo, pathInfo) {
+							slog.Info("detected log rotation", "fileInfo", fileInfo, "pathInfo", pathInfo)
 							newFile, newInfo, err := reopenLog(t.path)
 							if err != nil {
 								break
@@ -291,6 +295,7 @@ func (t *Tailer) Tail(ctx context.Context) (<-chan *Event, error) {
 						// copytruncate rotation.
 						pos, err := f.Seek(0, io.SeekCurrent)
 						if err == nil && pathInfo.Size() < pos {
+							slog.Info("detected copytruncate log rotation", "pos", pos)
 							if _, err := f.Seek(0, io.SeekStart); err == nil {
 								reader.Reset(f)
 							}
@@ -310,6 +315,7 @@ func (t *Tailer) Tail(ctx context.Context) (<-chan *Event, error) {
 // rotation, start at the beginning so lines written before we
 // notice the rotation are not skipped.
 func reopenLog(path string) (*os.File, os.FileInfo, error) {
+	slog.Debug("reopening log", "path", path)
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, nil, err
