@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/johannes/mmbridge/internal/config"
+	"github.com/johannes/mmbridge/internal/formatting"
 	"github.com/johannes/mmbridge/internal/logtail"
 	"github.com/johannes/mmbridge/internal/matrix"
 	"github.com/johannes/mmbridge/internal/rcon"
@@ -64,8 +64,6 @@ func New(cfg *config.Config, logger *slog.Logger) (*Bridge, error) {
 
 	return b, nil
 }
-
-var mcColorCode = regexp.MustCompile(`§.`)
 
 // Run starts the bridge and blocks until the context is cancelled.
 func (b *Bridge) Run(ctx context.Context) error {
@@ -206,8 +204,8 @@ func (b *Bridge) handleMinecraftEvent(
 	ev *logtail.Event,
 ) {
 
-	// Strip Minecraft color codes
-	ev.Message = mcColorCode.ReplaceAllString(ev.Message, "")
+	// Convert Minecraft message codes
+	ev.Message = formatting.MinecraftToMarkdown(ev.Message)
 
 	switch ev.Type {
 	case logtail.EventChat:
@@ -310,6 +308,7 @@ func (b *Bridge) handleMinecraftEvent(
 func (b *Bridge) handleMatrixMessage(sender, mxid, body string) {
 	// Escape all JSON strings before embedding them in tellraw.
 	escaped := jsonEscape(body)
+	escaped = formatting.MarkdownToMinecraft(body)
 	senderEscaped := jsonEscape(sender)
 	mxidEscaped := jsonEscape(mxid)
 
