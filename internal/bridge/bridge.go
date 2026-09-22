@@ -203,25 +203,17 @@ func (b *Bridge) handleMinecraftEvent(
 	ctx context.Context,
 	ev *logtail.Event,
 ) {
+	b.log.Info("handling", "event", ev)
 
 	// Convert Minecraft message codes
 	ev.Message = formatting.StripEscapes(ev.Message)
-
 	switch ev.Type {
 	case logtail.EventChat:
-		b.log.Debug(
-			"mc chat",
-			"player", ev.Player,
-			"message", ev.Message,
-		)
-
 		if err := b.matrix.SendMessage(ctx, ev.Player, ev.Message); err != nil {
 			b.log.Error("forward chat to matrix", "error", err)
 		}
 
 	case logtail.EventJoin:
-		b.log.Debug("mc join", "player", ev.Player)
-
 		if err := b.matrix.SetOnline(ctx, ev.Player, true); err != nil {
 			b.log.Error("setting presence", "online", true, "player", ev.Player)
 		}
@@ -236,8 +228,6 @@ func (b *Bridge) handleMinecraftEvent(
 		}
 
 	case logtail.EventLeave:
-		b.log.Debug("mc leave", "player", ev.Player)
-
 		if err := b.matrix.SetOnline(ctx, ev.Player, false); err != nil {
 			b.log.Error("setting presence", "online", false, "player", ev.Player)
 		}
@@ -256,12 +246,6 @@ func (b *Bridge) handleMinecraftEvent(
 			return
 		}
 
-		b.log.Debug(
-			"mc death",
-			"player", ev.Player,
-			"message", ev.Message,
-		)
-
 		if err := b.matrix.SendNotice(ctx, ev.Message); err != nil {
 			b.log.Error("forward death to matrix", "error", err)
 		}
@@ -277,12 +261,6 @@ func (b *Bridge) handleMinecraftEvent(
 			ev.Message,
 		)
 
-		b.log.Debug(
-			"mc advancement",
-			"player", ev.Player,
-			"advancement", ev.Message,
-		)
-
 		if err := b.matrix.SendNotice(ctx, msg); err != nil {
 			b.log.Error("forward advancement to matrix", "error", err)
 		}
@@ -291,12 +269,6 @@ func (b *Bridge) handleMinecraftEvent(
 		if !b.cfg.Bridge.RelayServer {
 			return
 		}
-
-		b.log.Debug(
-			"mc server msg",
-			"sender", ev.Player,
-			"message", ev.Message,
-		)
 
 		if err := b.matrix.SendNotice(
 			ctx,
@@ -322,12 +294,6 @@ func (b *Bridge) handleMatrixMessage(sender, mxid, body string) {
 		senderEscaped,
 		mxidEscaped,
 		escaped,
-	)
-
-	b.log.Debug(
-		"matrix->mc",
-		"sender", sender,
-		"message", body,
 	)
 
 	if err := b.executeMinecraftCommand(tellraw); err != nil {

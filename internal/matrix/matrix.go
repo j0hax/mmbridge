@@ -204,7 +204,7 @@ func (s *Service) handleMatrixMessage(ctx context.Context, evt *event.Event) {
 
 	displayName := s.getDisplayName(ctx, evt.Sender)
 
-	s.log.Info("matrix->mc", "sender", displayName, "body", content.Body)
+	s.log.Debug("matrix->mc", "sender", displayName, "body", content.Body)
 
 	if s.onMessage != nil {
 		s.onMessage(displayName, string(evt.Sender), content.Body)
