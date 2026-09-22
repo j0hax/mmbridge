@@ -4,6 +4,7 @@
 package matrix
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log/slog"
@@ -239,6 +240,63 @@ func (s *Service) getDisplayName(ctx context.Context, userID id.UserID) string {
 	return resp.DisplayName
 }
 
+func (s *Service) updateAvatar(ctx context.Context, avatar []byte, ghost *appservice.IntentAPI) error {
+	req := mautrix.ReqUploadMedia{
+		ContentBytes: avatar,
+		ContentType:  "image/png",
+	}
+	resp, err := ghost.UploadMedia(ctx, req)
+	if err != nil {
+		return fmt.Errorf("upload media: %w", err)
+	}
+
+	if err = ghost.SetAvatarURL(ctx, resp.ContentURI); err != nil {
+		return fmt.Errorf("set avatar: %w", err)
+	}
+
+	s.log.Info("updated avatar", "userid", ghost.UserID)
+
+	return nil
+}
+
+// updateAvatarIfNeeded uploads a profile picture to the ghost if:
+// it does not exist, or does not match what the Minecraft API says (i.e. updated)
+func (s *Service) updateAvatarIfNeeded(ctx context.Context, playerName string, ghost *appservice.IntentAPI) error {
+	// Step 1: check if the player has a skin on Minecraft's account servers.
+	pdata, err := mojang.GetPlayer(playerName)
+	if err == nil {
+		return fmt.Errorf("could not fetch player data for %s: %w", playerName, err)
+	}
+
+	face, err := pdata.GetFacePNG(1024)
+	if err != nil {
+		return fmt.Errorf("could not generate player face PNG for %s: %w", playerName, err)
+	}
+
+	// Step 2: check if the player has an avatar on Matrix
+	avatarURL, err := ghost.GetOwnAvatarURL(ctx)
+	if err != nil {
+		return fmt.Errorf("could not get Matrix avatar URL for %s: %w", ghost.UserID, err)
+	}
+
+	// Immediately update the avatar if none is set and we have the data
+	if avatarURL.IsEmpty() {
+		return s.updateAvatar(ctx, face, ghost)
+	}
+
+	// Otherwise, check if the avatar matches what Minecraft reports.
+	data, err := ghost.DownloadBytes(ctx, avatarURL)
+	if err != nil {
+		return fmt.Errorf("could not download player avatar for %s: %w", ghost.UserID, err)
+	}
+
+	if !bytes.Equal(data, face) {
+		return s.updateAvatar(ctx, face, ghost)
+	}
+
+	return nil
+}
+
 // getOrCreateGhost returns (and lazily provisions) an intent for a Minecraft player ghost.
 func (s *Service) getOrCreateGhost(ctx context.Context, player string) (*appservice.IntentAPI, error) {
 	key := strings.ToLower(player)
@@ -262,38 +320,12 @@ func (s *Service) getOrCreateGhost(ctx context.Context, player string) (*appserv
 		s.log.Warn("ghost set display name", "player", player, "error", err)
 	}
 
-	// Upload profile picture iff it does not exist.
-	// TODO: currently, pictures are not automatically updated if a skin changes.
-	// We should compare pictures and update them.
-	url, _ := intent.GetOwnAvatarURL(ctx)
-	if url.IsEmpty() {
-		pdata, err := mojang.GetPlayer(player)
-		if err == nil {
-			face, err := pdata.GetFacePNG(1024)
-			if err == nil {
-				req := mautrix.ReqUploadMedia{
-					ContentBytes: face,
-					ContentType:  "image/png",
-				}
-				resp, err := intent.UploadMedia(ctx, req)
-				if err != nil {
-					s.log.Warn("Could not upload avatar", "player", player, "error", err)
-				}
-
-				if err = intent.SetAvatarURL(ctx, resp.ContentURI); err != nil {
-					s.log.Info("set new avatar", "player", player, "url", resp.ContentURI.String())
-				} else {
-					s.log.Error("could not set avatar", "player", player, "err", err)
-				}
-			} else {
-				s.log.Error("could not fetch skin data", "player", player, "error", err)
-			}
-		} else {
-			s.log.Error("could not fetch player information", "player", player, "error", err)
+	// Update the profile picture in the background
+	go func() {
+		if err := s.updateAvatarIfNeeded(ctx, player, intent); err != nil {
+			s.log.Warn("updating ghost avatar", "player", player, "error", err)
 		}
-	} else {
-		s.log.Debug("not updating avatar, already have one", "player", player, "url", url.String())
-	}
+	}()
 
 	if err := intent.EnsureJoined(ctx, s.roomID); err != nil {
 		return nil, fmt.Errorf("ghost join room: %w", err)
