@@ -264,7 +264,7 @@ func (s *Service) updateAvatar(ctx context.Context, avatar []byte, ghost *appser
 func (s *Service) updateAvatarIfNeeded(ctx context.Context, playerName string, ghost *appservice.IntentAPI) error {
 	// Step 1: check if the player has a skin on Minecraft's account servers.
 	pdata, err := mojang.GetPlayer(playerName)
-	if err == nil {
+	if err != nil {
 		return fmt.Errorf("could not fetch player data for %s: %w", playerName, err)
 	}
 
