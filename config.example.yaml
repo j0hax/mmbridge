@@ -50,6 +50,9 @@ bridge:
   # Relay advancement notifications.
   relay_advancements: true
 
+  # Relay server messages
+  relay_server_messages: true
+
   # Command prefix for Matrix users to run bridge commands.
   # e.g. "!mc list" to see online players.
   command_prefix: "!mc"

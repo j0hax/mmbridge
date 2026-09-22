@@ -41,6 +41,7 @@ let
       relay_join_leave = cfg.bridge.relayJoinLeave;
       relay_deaths = cfg.bridge.relayDeaths;
       relay_advancements = cfg.bridge.relayAdvancements;
+      relay_server_messages = cfg.bridge.relayServerMessages;
       command_prefix = cfg.bridge.commandPrefix;
     };
   };
@@ -173,6 +174,12 @@ in
         type = lib.types.bool;
         default = true;
         description = "Relay Minecraft advancements to Matrix.";
+      };
+      
+      relayServerMessages = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Relay Minecraft Server messages to Matrix.";
       };
 
       commandPrefix = lib.mkOption {

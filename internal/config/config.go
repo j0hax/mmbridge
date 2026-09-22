@@ -77,6 +77,9 @@ type BridgeConfig struct {
 
 	// Whether to relay advancements.
 	RelayAdvancements bool `yaml:"relay_advancements"`
+
+	// Whether to relay Server messsages, e.g. via /say.
+	RelayServer bool `yaml:"relay_server_messages"`
 }
 
 // Load reads and parses the configuration from the given YAML file path.

@@ -288,6 +288,10 @@ func (b *Bridge) handleMinecraftEvent(
 		}
 
 	case logtail.EventServerMsg:
+		if !b.cfg.Bridge.RelayServer {
+			return
+		}
+
 		b.log.Debug(
 			"mc server msg",
 			"sender", ev.Player,
