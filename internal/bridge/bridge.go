@@ -289,10 +289,9 @@ func (b *Bridge) handleMatrixMessage(sender, mxid, body string) {
 	mxidEscaped := jsonEscape(mxid)
 
 	tellraw := fmt.Sprintf(
-		`tellraw @a [{"text":"[Matrix] ","color":"green","hoverEvent":{"action":"show_text","value":"%s"}},{"text":"<%s> ","color":"white","hoverEvent":{"action":"show_text","value":"%s"}},{"text":"%s","color":"white"}]`,
+		`tellraw @a [{"text":"[Matrix]","color":"green","hover_event":{"action":"show_text","value":"%s"}},{"text":" <%s> ","color":"white"},{"text":"%s","color":"white"}]`,
 		mxidEscaped,
 		senderEscaped,
-		mxidEscaped,
 		escaped,
 	)
 
