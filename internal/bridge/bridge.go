@@ -138,6 +138,8 @@ func (b *Bridge) connectRCON(ctx context.Context) error {
 //
 // RCON may return a response, but the bridge does not currently use it.
 func (b *Bridge) executeMinecraftCommand(command string) error {
+	b.log.Debug("executing", "command", command)
+
 	if b.rcon != nil {
 		if _, err := b.rcon.Execute(command); err != nil {
 			b.log.Warn("rcon command failed, reconnecting", "error", err)

@@ -113,6 +113,10 @@ func (s *Service) Start(ctx context.Context) error {
 		s.log.Warn("bot presence", "error", err)
 	}
 
+	if err := bot.SetDisplayName(ctx, "Minecraft Bridge"); err != nil {
+		s.log.Warn("bot display name", "error", err)
+	}
+
 	go s.processor.Start(ctx)
 	go s.as.Start()
 

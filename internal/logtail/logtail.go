@@ -55,7 +55,8 @@ type Event struct {
 }
 
 func (e Event) String() string {
-	return fmt.Sprintf("[%s] <%s> %s ", e.Type, e.Player, e.Message)
+	val := fmt.Sprintf("[%s] <%s> %s", e.Type, e.Player, e.Message)
+	return strings.TrimSpace(val)
 }
 
 // Compiled patterns for Minecraft log lines.
