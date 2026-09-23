@@ -51,7 +51,7 @@ type Event struct {
 	Player    string
 	Message   string // chat text, death message, advancement name, etc.
 	RawLine   string
-	Timestamp string
+	Timestamp time.Time
 }
 
 func (e Event) String() string {
@@ -113,7 +113,24 @@ func ParseLine(line string) *Event {
 	if m == nil {
 		return nil
 	}
-	timestamp := m[1]
+
+	// Try to parset the timestamp.
+	// Fall back to the current date/time otherwise.
+	now := time.Now()
+	parsed, err := time.Parse("15:04:05", m[1])
+	if err != nil {
+		slog.Error("could not parse", "time", m[1], "err", err)
+		parsed = now
+	}
+
+	// Add the current date to the timestamp
+	timestamp := time.Date(
+		now.Year(), now.Month(), now.Day(),
+		parsed.Hour(), parsed.Minute(), parsed.Second(),
+		0,
+		now.Location(),
+	)
+
 	body := m[2]
 
 	// Chat message
