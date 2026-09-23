@@ -151,8 +151,9 @@ func (p *Player) GetSkin() (*image.RGBA, error) {
 	return rgba, nil
 }
 
-// Returns just the player's face texture
-func (p *Player) GetFace() (*image.RGBA, error) {
+// Returns just the player's face texture,
+// optionally with the outer layer
+func (p *Player) GetFace(includeOuter bool) (*image.RGBA, error) {
 	skin, err := p.GetSkin()
 	if err != nil {
 		return nil, err
@@ -160,19 +161,24 @@ func (p *Player) GetFace() (*image.RGBA, error) {
 
 	face := skin.SubImage(image.Rect(8, 8, 16, 16)).(*image.RGBA)
 
+	// add the top layer
+	if includeOuter {
+		overlay := skin.SubImage(image.Rect(40, 8, 48, 16)).(*image.RGBA)
+		draw.Draw(face, face.Bounds(), overlay, overlay.Bounds().Min, draw.Over)
+	}
+
 	return face, nil
 }
 
 // Returns the player's face as a ready-to-use PNG-Encoded byte array
 func (p *Player) GetFacePNG(size int) ([]byte, error) {
-	face, err := p.GetFace()
+	face, err := p.GetFace(true)
 	if err != nil {
 		return nil, err
 	}
 
-	// scale the face to a usable size
+	// scale the face to the requested size
 	dst := image.NewRGBA(image.Rect(0, 0, size, size))
-
 	draw.NearestNeighbor.Scale(
 		dst,
 		dst.Bounds(),
