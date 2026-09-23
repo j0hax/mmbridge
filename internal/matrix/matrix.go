@@ -266,6 +266,7 @@ func (s *Service) updateAvatar(ctx context.Context, avatar []byte, ghost *appser
 // updateAvatarIfNeeded uploads a profile picture to the ghost if:
 // it does not exist, or does not match what the Minecraft API says (i.e. updated)
 func (s *Service) updateAvatarIfNeeded(ctx context.Context, playerName string, ghost *appservice.IntentAPI) error {
+	s.log.Debug("checking if ghost needs avatar update", "player", playerName)
 	// Step 1: check if the player has a skin on Minecraft's account servers.
 	pdata, err := mojang.GetPlayer(playerName)
 	if err != nil {
@@ -296,6 +297,8 @@ func (s *Service) updateAvatarIfNeeded(ctx context.Context, playerName string, g
 
 	if !bytes.Equal(data, face) {
 		return s.updateAvatar(ctx, face, ghost)
+	} else {
+		s.log.Debug("Matrix avatar and skin are identical")
 	}
 
 	return nil
