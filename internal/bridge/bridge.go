@@ -199,11 +199,9 @@ func (b *Bridge) forwardMinecraftEvents(
 }
 
 // handleMinecraftEvent processes a single Minecraft log event and sends it to Matrix.
-func (b *Bridge) handleMinecraftEvent(
-	ctx context.Context,
-	ev *logtail.Event,
-) {
-	b.log.Info("handling", "event", ev)
+func (b *Bridge) handleMinecraftEvent(ctx context.Context, ev *logtail.Event) {
+	// Log the event
+	b.log.Info(ev.String())
 
 	// Convert Minecraft message codes
 	ev.Message = formatting.StripEscapes(ev.Message)

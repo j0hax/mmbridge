@@ -26,15 +26,6 @@ const (
 	EventServerMsg                    // Server broadcast (e.g. /say)
 )
 
-// Event represents a parsed Minecraft server log event.
-type Event struct {
-	Type      EventType
-	Player    string
-	Message   string // chat text, death message, advancement name, etc.
-	RawLine   string
-	Timestamp string
-}
-
 func (e EventType) String() string {
 	switch e {
 	case EventChat:
@@ -52,6 +43,19 @@ func (e EventType) String() string {
 	default:
 		return "unknown"
 	}
+}
+
+// Event represents a parsed Minecraft server log event.
+type Event struct {
+	Type      EventType
+	Player    string
+	Message   string // chat text, death message, advancement name, etc.
+	RawLine   string
+	Timestamp string
+}
+
+func (e Event) String() string {
+	return fmt.Sprintf("[%s] <%s> %s ", e.Type, e.Player, e.Message)
 }
 
 // Compiled patterns for Minecraft log lines.
