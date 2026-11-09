@@ -78,20 +78,21 @@ func MinecraftToMarkdown(s string) string {
 	}
 
 	for i := 0; i < len(s); {
-		if s[i] != '§' {
-			r, size := utf8.DecodeRuneInString(s[i:])
+		r, size := utf8.DecodeRuneInString(s[i:])
+		if r != '§' {
 			out.WriteRune(r)
 			i += size
 			continue
 		}
 
-		if i+2 > len(s) {
-			out.WriteByte(s[i])
-			i++
+		// A formatting code is "§" followed by a single rune.
+		if i+size >= len(s) {
+			out.WriteRune(r)
+			i += size
 			continue
 		}
 
-		code := rune(s[i+2-1])
+		code, codeSize := utf8.DecodeRuneInString(s[i+size:])
 
 		switch code {
 		case mcBold:
@@ -136,7 +137,7 @@ func MinecraftToMarkdown(s string) string {
 			}
 		}
 
-		i += 2
+		i += size + codeSize
 	}
 
 	closeStyles()
