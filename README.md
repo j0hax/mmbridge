@@ -1,5 +1,7 @@
 # mmbridge
 
+[![CI](https://github.com/j0hax/mmbridge/actions/workflows/ci.yml/badge.svg)](https://github.com/j0hax/mmbridge/actions/workflows/ci.yml)
+
 A daemon that bridges chat between a vanilla Minecraft Java Edition server and a [Matrix](https://matrix.org/) chat room, using the [Matrix Application Service API](https://spec.matrix.org/latest/application-service-api/).
 
 ## How it works
