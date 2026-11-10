@@ -4,6 +4,29 @@
 
 A daemon that bridges chat between a vanilla Minecraft Java Edition server and a [Matrix](https://matrix.org/) chat room, using the [Matrix Application Service API](https://spec.matrix.org/latest/application-service-api/).
 
+## Features
+
+### Minecraft to Matrix
+
+- **Chat messages**: Player chat appears in Matrix as ghost users (e.g., `Steve` → `@mc_steve:example.com`)
+- **Player avatars**: Ghost users automatically fetch and display the player's Minecraft skin as their Matrix avatar
+- **Join/leave events**: Notifications when players join or leave the game (configurable via `relay_join_leave`)
+- **Death messages**: Death notifications are relayed to Matrix (configurable via `relay_deaths`)
+- **Advancements**: Advancement notifications are relayed to Matrix (configurable via `relay_advancements`)
+- **Server messages**: Messages sent via `/say` or similar commands are relayed (configurable via `relay_server_messages`)
+
+### Matrix to Minecraft
+
+- **Text messages**: Matrix messages appear in Minecraft with a `[Matrix]` prefix
+- **Ghost user mention formatting**: Mentions of ghost users (e.g., `@mc_steve:example.com`) are simplified to just the player name (e.g., `steve`)
+- **Reply handling**: When a Matrix user replies to a message, it's displayed in Minecraft with a `(to X)` indicator showing who they're replying to
+- **Markdown formatting**: A subset of Markdown is converted to Minecraft formatting codes:
+  - `**bold**` → §l (bold)
+  - `*italic*` → §o (italic)
+  - `~~strikethrough~~` → §m (strikethrough)
+  - `<u>underline</u>` → §n (underline)
+- **Hover information**: Hovering over the `[Matrix]` prefix shows the sender's full Matrix ID
+
 ## How it works
 
 **Minecraft to Matrix:**
