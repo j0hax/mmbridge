@@ -42,7 +42,6 @@ let
       relay_deaths = cfg.bridge.relayDeaths;
       relay_advancements = cfg.bridge.relayAdvancements;
       relay_server_messages = cfg.bridge.relayServerMessages;
-      command_prefix = cfg.bridge.commandPrefix;
     };
   };
 in
@@ -180,12 +179,6 @@ in
         type = lib.types.bool;
         default = true;
         description = "Relay Minecraft Server messages to Matrix.";
-      };
-
-      commandPrefix = lib.mkOption {
-        type = lib.types.str;
-        default = "!mc";
-        description = "Command prefix for Matrix-side bridge commands.";
       };
     };
   };

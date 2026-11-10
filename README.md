@@ -17,7 +17,7 @@ A daemon that bridges chat between a vanilla Minecraft Java Edition server and a
 - Receives events from the homeserver via the appservice HTTP listener
 - Forwards messages to the Minecraft server using RCON `tellraw`, displayed as `[Matrix] <username> message`
 - Hovering over the username in-game shows the sender's full Matrix ID
-- Supports `!mc list` to query online players from Matrix
+
 
 ## Requirements
 
@@ -118,15 +118,7 @@ See [`config.example.yaml`](config.example.yaml) for all available options with 
 
 Secrets can be provided inline in the YAML (`rcon_password`, `as_token`, `hs_token`) or read from files at startup (`rcon_password_file`, `as_token_file`, `hs_token_file`). The file variants take precedence when the inline value is empty.
 
-## Matrix commands
 
-From the bridged Matrix room:
-
-| Command    | Description                       |
-|------------|-----------------------------------|
-| `!mc list` | Show players currently online     |
-
-The command prefix is configurable (default: `!mc`).
 
 ## License
 
