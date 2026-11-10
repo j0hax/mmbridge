@@ -22,8 +22,8 @@ import (
 )
 
 // MessageHandler is called when a real Matrix user sends a message to the bridged room.
-// Parameters: sender display name, Matrix ID (e.g. @user:example.com), message body.
-type MessageHandler func(sender string, mxid string, body string)
+// Parameters: sender display name, Matrix ID (e.g. @user:example.com), message body, reply-to sender (empty if not a reply).
+type MessageHandler func(sender string, mxid string, body string, replyTo string)
 
 // Service manages the Matrix appservice connection.
 type Service struct {
@@ -207,12 +207,19 @@ func (s *Service) handleMatrixMessage(ctx context.Context, evt *event.Event) {
 		return
 	}
 
+	// Check if this is a reply to another message
+	replyTo := ""
+	if content.RelatesTo != nil && content.RelatesTo.InReplyTo != nil {
+		// This is a reply, try to get the original sender
+		replyTo = s.getReplySender(ctx, content.RelatesTo.InReplyTo.EventID)
+	}
+
 	displayName := s.getDisplayName(ctx, evt.Sender)
 
-	s.log.Debug("matrix->mc", "sender", displayName, "body", content.Body)
+	s.log.Debug("matrix->mc", "sender", displayName, "body", content.Body, "reply_to", replyTo)
 
 	if s.onMessage != nil {
-		s.onMessage(displayName, string(evt.Sender), content.Body)
+		s.onMessage(displayName, string(evt.Sender), content.Body, replyTo)
 	}
 }
 
@@ -242,6 +249,25 @@ func (s *Service) getDisplayName(ctx context.Context, userID id.UserID) string {
 		return localpart
 	}
 	return resp.DisplayName
+}
+
+// getReplySender fetches the sender of the event being replied to.
+// Returns an empty string if the event cannot be found or has no sender.
+func (s *Service) getReplySender(ctx context.Context, eventID id.EventID) string {
+	// Try to get the original event from the room
+	evt, err := s.as.BotIntent().GetEvent(ctx, s.roomID, eventID)
+	if err != nil {
+		s.log.Debug("could not fetch reply parent event", "event_id", eventID, "error", err)
+		return ""
+	}
+
+	// Check if the event has a sender
+	if evt.Sender == "" {
+		return ""
+	}
+
+	// Get the display name of the original sender
+	return s.getDisplayName(ctx, evt.Sender)
 }
 
 func (s *Service) updateAvatar(ctx context.Context, avatar []byte, ghost *appservice.IntentAPI) error {

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -281,23 +282,70 @@ func (b *Bridge) handleMinecraftEvent(ctx context.Context, ev *logtail.Event) {
 
 // handleMatrixMessage is called when a real Matrix user sends a message.
 // It forwards the message to Minecraft using /tellraw via RCON or FIFO.
-func (b *Bridge) handleMatrixMessage(sender, mxid, body string) {
+func (b *Bridge) handleMatrixMessage(sender, mxid, body, replyTo string) {
+	// Replace Matrix ghost user mentions with just the player name.
+	// e.g. "@mc_steve:example.com" becomes "steve"
+	processedBody := b.replaceGhostMentions(body)
+
+	// Also replace ghost mentions in replyTo if present
+	processedReplyTo := ""
+	if replyTo != "" {
+		processedReplyTo = b.replaceGhostMentions(replyTo)
+	}
+
 	// Escape all JSON strings before embedding them in tellraw.
-	escaped := jsonEscape(body)
-	escaped = formatting.MarkdownToMinecraft(body)
+	escapedBody := jsonEscape(processedBody)
+	escapedBody = formatting.MarkdownToMinecraft(processedBody)
 	senderEscaped := jsonEscape(sender)
 	mxidEscaped := jsonEscape(mxid)
 
-	tellraw := fmt.Sprintf(
-		`tellraw @a [{"text":"[Matrix]","color":"green","hover_event":{"action":"show_text","value":"%s"}},{"text":" <%s> ","color":"white"},{"text":"%s","color":"white"}]`,
-		mxidEscaped,
-		senderEscaped,
-		escaped,
-	)
+	// Build the tellraw command based on whether this is a reply
+	var tellraw string
+	if processedReplyTo != "" {
+		// This is a reply, format it as "sender (to replyTo): message"
+		replyToEscaped := jsonEscape(processedReplyTo)
+		tellraw = fmt.Sprintf(
+			`tellraw @a [{"text":"[Matrix]","color":"green","hover_event":{"action":"show_text","value":"%s"}},{"text":" <%s> ","color":"white"},{"text":"(to %s) ","color":"gray","italic":true},{"text":"%s","color":"white"}]`,
+			mxidEscaped,
+			senderEscaped,
+			replyToEscaped,
+			escapedBody,
+		)
+	} else {
+		// Regular message
+		tellraw = fmt.Sprintf(
+			`tellraw @a [{"text":"[Matrix]","color":"green","hover_event":{"action":"show_text","value":"%s"}},{"text":" <%s> ","color":"white"},{"text":"%s","color":"white"}]`,
+			mxidEscaped,
+			senderEscaped,
+			escapedBody,
+		)
+	}
 
 	if err := b.executeMinecraftCommand(tellraw); err != nil {
 		b.log.Error("minecraft tellraw", "error", err)
 	}
+}
+
+// replaceGhostMentions replaces Matrix ghost user mentions in the format
+// @<user_prefix><player>:<domain> with just the player name.
+// For example, with user_prefix "mc_" and domain "example.com",
+// "@mc_steve:example.com" becomes "steve".
+func (b *Bridge) replaceGhostMentions(body string) string {
+	prefix := b.cfg.Matrix.UserPrefix
+	domain := b.cfg.Matrix.Domain
+
+	// Match @<prefix><name>:<domain> pattern
+	// The prefix and domain are escaped for use in regexp
+	pattern := fmt.Sprintf(
+		`@%s([a-zA-Z0-9_]+):%s`,
+		regexp.QuoteMeta(prefix),
+		regexp.QuoteMeta(domain),
+	)
+
+	re := regexp.MustCompile(pattern)
+
+	// Replace each match with just the player name (capture group 1)
+	return re.ReplaceAllString(body, "$1")
 }
 
 // jsonEscape escapes a string for safe embedding inside a JSON string literal.
