@@ -287,16 +287,17 @@ func (b *Bridge) handleMatrixMessage(sender, mxid, body, replyTo string) {
 	// e.g. "@mc_steve:example.com" becomes "steve"
 	processedBody := b.replaceGhostMentions(body)
 
-	// Also replace ghost mentions in replyTo if present
+	// Also replace ghost mentions in replyTo and sender if present
 	processedReplyTo := ""
 	if replyTo != "" {
 		processedReplyTo = b.replaceGhostMentions(replyTo)
 	}
+	processedSender := b.replaceGhostMentions(sender)
 
 	// Escape all JSON strings before embedding them in tellraw.
 	escapedBody := jsonEscape(processedBody)
 	escapedBody = formatting.MarkdownToMinecraft(processedBody)
-	senderEscaped := jsonEscape(sender)
+	senderEscaped := jsonEscape(processedSender)
 	mxidEscaped := jsonEscape(mxid)
 
 	// Build the tellraw command based on whether this is a reply
@@ -329,15 +330,17 @@ func (b *Bridge) handleMatrixMessage(sender, mxid, body, replyTo string) {
 // replaceGhostMentions replaces Matrix ghost user mentions in the format
 // @<user_prefix><player>:<domain> with just the player name.
 // For example, with user_prefix "mc_" and domain "example.com",
-// "@mc_steve:example.com" becomes "steve".
+// "@mc_steve:example.com" or "@MC_Steve:example.com" becomes "steve".
+// Uses case-insensitive matching and word boundaries to avoid partial matches.
 func (b *Bridge) replaceGhostMentions(body string) string {
 	prefix := b.cfg.Matrix.UserPrefix
 	domain := b.cfg.Matrix.Domain
 
-	// Match @<prefix><name>:<domain> pattern
+	// Match @<prefix><name>:<domain> pattern with word boundary
 	// The prefix and domain are escaped for use in regexp
+	// (?i) makes it case-insensitive, \b ensures word boundary
 	pattern := fmt.Sprintf(
-		`@%s([a-zA-Z0-9_]+):%s`,
+		`(?i)@%s([a-zA-Z0-9_]+):%s\b`,
 		regexp.QuoteMeta(prefix),
 		regexp.QuoteMeta(domain),
 	)
